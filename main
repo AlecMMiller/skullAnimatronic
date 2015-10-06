@@ -1,0 +1,63 @@
+#include <Servo.h>
+
+Servo jaw;
+
+const int sampleWindow = 50; // Sample window width in mS (50 mS = 20Hz)
+unsigned int sample;
+ 
+void setup() 
+{
+   Serial.begin(9600);
+   jaw.attach(3);
+}
+ 
+
+double voltMax = 0;
+
+int closed = 60; // Mouth closed position
+int range = 30; // How much to open mouth
+
+void loop() 
+{
+   unsigned long startMillis= millis();  // Start of sample window
+   unsigned int peakToPeak = 0;   // peak-to-peak level
+ 
+   unsigned int signalMax = 0;
+   unsigned int signalMin = 1024;
+ 
+   // collect data for 50 mS
+   while (millis() - startMillis < sampleWindow)
+   {
+      sample = analogRead(0);
+      if (sample < 1024)  // toss out spurious readings
+      {
+         if (sample > signalMax)
+         {
+            signalMax = sample;  // save just the max levels
+         }
+         else if (sample < signalMin)
+         {
+            signalMin = sample;  // save just the min levels
+         }
+      }
+   }
+   peakToPeak = signalMax - signalMin;  // max - min = peak-peak amplitude
+   double volts = (peakToPeak * 3.3) / 1024;  // convert to volts
+
+   if(volts>voltMax){ // find the top of the region of voltage levels
+    voltMax=volts;
+   }
+
+   double loudness = (volts/voltMax)-0.2; // deadband of 0.2
+   int servoPos = -loudness*(range)+closed;
+   
+
+
+   if(loudness>0.0){ // if outside deadband
+      myservo.write(servoPos);
+      Serial.println(servoPos);
+   }else{
+     jaw.write(closed);
+     Serial.println("Closed");
+   }
+}
