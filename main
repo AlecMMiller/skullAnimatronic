@@ -54,7 +54,7 @@ void loop()
 
 
    if(loudness>0.0){ // if outside deadband
-      myservo.write(servoPos);
+      jaw.write(servoPos);
       Serial.println(servoPos);
    }else{
      jaw.write(closed);
